@@ -57,7 +57,7 @@ function App() {
 
   return (
     <div style={{ margin: 50 }}>
-      <input style={{ width: '100%', marginBottom: 20 }} onChange={handleSearchAspects} />
+      <input placeholder='Search...' style={{ width: '100%', marginBottom: 20 }} onChange={handleSearchAspects} />
       {aspects.map(({ category, desc_localized: descLocalized, in_codex: inCodex, name, name_localized: nameLocalized }) => (
         <div key={name} style={{ margin: 10 }}>
           <Aspect
