@@ -14,6 +14,14 @@ const getLocalized = (objectLocalized) => {
   return text
 }
 
+const normalizeText = (text) => {
+  return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+}
+
+const doesTextsIncludes = (text, textToInclude) => {
+  return normalizeText(text).includes(normalizeText(textToInclude));
+}
+
 function App() {
   const aspectsRef = useRef([])
   const [aspects, setAspects] = useState([])
@@ -23,7 +31,7 @@ function App() {
     const searchText = search.target.value
 
     const aspectsFiltered = aspectsRef.current.filter(({ desc_localized: descLocalized, name_localized: nameLocalized }) => (
-      getLocalized(descLocalized).includes(searchText) || getLocalized(nameLocalized).includes(searchText)
+      doesTextsIncludes(getLocalized(descLocalized), searchText) || doesTextsIncludes(getLocalized(nameLocalized), searchText)
     ))
     setAspects(aspectsFiltered)
   }, 500)
@@ -57,7 +65,7 @@ function App() {
 
   return (
     <div style={{ margin: 50 }}>
-      <input placeholder='Search...' style={{ width: '100%', marginBottom: 20 }} onChange={handleSearchAspects} />
+      <input placeholder='Search...' style={{ width: '100%', marginBottom: 20, padding: 5 }} onChange={handleSearchAspects} />
       {aspects.map(({ category, desc_localized: descLocalized, in_codex: inCodex, name, name_localized: nameLocalized }) => (
         <div key={name} style={{ margin: 10 }}>
           <Aspect
