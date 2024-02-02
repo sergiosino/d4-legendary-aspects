@@ -8,6 +8,15 @@ const ASPECTS_URL = '/aspects.json'
 const LOCALIZED_ES = 'esES'
 const LOCALIZED_EN = 'enUS'
 const LOCAL_STORAGE_ASPECTS_IN_PROPERTY = 'ASPECTS_IN_PROPERTY'
+const CLASSES_LIST = [
+  { id: '', value: 'All' },
+  { id: 'Barbarian', value: 'Barbarian' },
+  { id: 'Druid', value: 'Druid' },
+  { id: 'Generic', value: 'Generic' },
+  { id: 'Necromancer', value: 'Necromancer' },
+  { id: 'Rogue', value: 'Rogue' },
+  { id: 'Sorcerer', value: 'Sorcerer' },
+]
 
 const getLocalized = (objectLocalized) => {
   const text = objectLocalized[LOCALIZED_ES] ?? objectLocalized[LOCALIZED_EN]
@@ -26,15 +35,17 @@ function App() {
   const aspectsRef = useRef([])
   const [aspects, setAspects] = useState([])
   const [aspectsInProperty, setAspectsInProperty] = useState([])
+  const [filters, setFilters] = useState({ classSelected: '', searchInput: '' })
 
   const handleSearchAspects = debounce(async (search) => {
-    const searchText = search.target.value
-
-    const aspectsFiltered = aspectsRef.current.filter(({ desc_localized: descLocalized, name_localized: nameLocalized }) => (
-      doesTextsIncludes(getLocalized(descLocalized), searchText) || doesTextsIncludes(getLocalized(nameLocalized), searchText)
-    ))
-    setAspects(aspectsFiltered)
+    const searchInput = search.target.value
+    setFilters({ ...filters, searchInput })
   }, 500)
+
+  const handleSelectClass = (data) => {
+    const classSelected = data.target.value
+    setFilters({ ...filters, classSelected })
+  }
 
   const saveAspectsInProperty = (newAspectsInProperty) => {
     localStorage.setItem(LOCAL_STORAGE_ASPECTS_IN_PROPERTY, JSON.stringify(newAspectsInProperty))
@@ -52,6 +63,22 @@ function App() {
   }
 
   useEffect(() => {
+    const { classSelected, searchInput } = filters
+    let aspectsFiltered = aspectsRef.current
+
+    if (classSelected !== '') {
+      aspectsFiltered = aspectsFiltered.filter(({ class: aspectClass }) => aspectClass === classSelected)
+    }
+    if (searchInput !== '') {
+      aspectsFiltered = aspectsFiltered.filter(({ desc_localized: descLocalized, name_localized: nameLocalized }) => (
+        doesTextsIncludes(getLocalized(descLocalized), searchInput) || doesTextsIncludes(getLocalized(nameLocalized), searchInput)
+      ))
+    }
+    
+    setAspects(aspectsFiltered)
+  }, [filters])
+
+  useEffect(() => {
     fetch(ASPECTS_URL).then(response => response.json()).then(data => {
       const aspectsArray = Object.entries(data).map(([name, aspect]) => ({
         name: name,
@@ -65,8 +92,13 @@ function App() {
 
   return (
     <div style={{ margin: 50 }}>
-      <input placeholder='Search...' style={{ width: '100%', marginBottom: 20, padding: 5 }} onChange={handleSearchAspects} />
-      {aspects.map(({ category, desc_localized: descLocalized, in_codex: inCodex, name, name_localized: nameLocalized }) => (
+      <div style={{ display: 'flex', marginBottom: 20, gap: 10 }}>
+        <select id="cars" onChange={handleSelectClass}>
+          {CLASSES_LIST.map(({ id, value }) => <option key={id} value={id}>{value}</option>)}
+        </select>
+        <input placeholder='Search...' style={{ width: '100%', padding: 5 }} onChange={handleSearchAspects} />
+      </div>
+      {aspects.map(({ category/*, class: aspectClass*/, desc_localized: descLocalized, in_codex: inCodex, name, name_localized: nameLocalized }) => (
         <div key={name} style={{ margin: 10 }}>
           <Aspect
             id={name}
@@ -80,7 +112,6 @@ function App() {
           />
         </div>
       ))}
-      {/* <Aspect /> */}
     </div>
   )
 }
