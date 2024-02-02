@@ -18,8 +18,8 @@ const CLASSES_LIST = [
   { id: 'Sorcerer', value: 'Sorcerer' },
 ]
 
-const getLocalized = (objectLocalized) => {
-  const text = objectLocalized[LOCALIZED_ES] ?? objectLocalized[LOCALIZED_EN]
+const getLocalized = (objectLocalized, locale) => {
+  const text = objectLocalized[locale] ?? ''
   return text
 }
 
@@ -71,10 +71,13 @@ function App() {
     }
     if (searchInput !== '') {
       aspectsFiltered = aspectsFiltered.filter(({ desc_localized: descLocalized, name_localized: nameLocalized }) => (
-        doesTextsIncludes(getLocalized(descLocalized), searchInput) || doesTextsIncludes(getLocalized(nameLocalized), searchInput)
+        doesTextsIncludes(getLocalized(descLocalized, LOCALIZED_ES), searchInput)
+        || doesTextsIncludes(getLocalized(descLocalized, LOCALIZED_EN), searchInput)
+        || doesTextsIncludes(getLocalized(nameLocalized, LOCALIZED_ES), searchInput)
+        || doesTextsIncludes(getLocalized(nameLocalized, LOCALIZED_EN), searchInput)
       ))
     }
-    
+
     setAspects(aspectsFiltered)
   }, [filters])
 
@@ -103,9 +106,9 @@ function App() {
           <Aspect
             id={name}
             category={category}
-            desc={getLocalized(descLocalized)}
+            desc={getLocalized(descLocalized, LOCALIZED_ES)}
             inCodex={inCodex}
-            name={getLocalized(nameLocalized)}
+            name={getLocalized(nameLocalized, LOCALIZED_ES)}
             isInPorperty={aspectsInProperty.some(aspect => aspect === name)}
             onAddClick={addAspectToPropertyList}
             onRemoveClick={removeAspectFromPropertyList}
