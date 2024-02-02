@@ -4,12 +4,13 @@ import Aspect from "./components/Aspect"
 import { useEffect } from "react"
 import { useRef } from "react"
 
+const LOCAL_STORAGE_ASPECTS_IN_PROPERTY = 'ASPECTS_IN_PROPERTY'
+const LOCAL_STORAGE_ASPECTS_NECESSARY = 'ASPECTS_NECESSARY'
 const ASPECTS_URL = '/aspects.json'
 const LOCALIZED_ES = 'esES'
 const LOCALIZED_EN = 'enUS'
-const LOCAL_STORAGE_ASPECTS_IN_PROPERTY = 'ASPECTS_IN_PROPERTY'
 const CLASSES_LIST = [
-  { id: '', value: 'All' },
+  { id: '', value: 'All classes' },
   { id: 'Barbarian', value: 'Barbarian' },
   { id: 'Druid', value: 'Druid' },
   { id: 'Generic', value: 'Generic' },
@@ -35,35 +36,55 @@ function App() {
   const aspectsRef = useRef([])
   const [aspects, setAspects] = useState([])
   const [aspectsInProperty, setAspectsInProperty] = useState([])
-  const [filters, setFilters] = useState({ classSelected: '', searchInput: '' })
+  const [aspectsNecessary, setAspectsNecessary] = useState([])
+  const [filters, setFilters] = useState({ classSelected: '', searchInput: '', isNecessaryChecked: false })
 
-  const handleSearchAspects = debounce(async (search) => {
-    const searchInput = search.target.value
+  const handleSearchAspects = debounce(async (event) => {
+    const searchInput = event.target.value
     setFilters({ ...filters, searchInput })
   }, 500)
 
-  const handleSelectClass = (data) => {
-    const classSelected = data.target.value
+  const handleFilterNecessary = (event) => {
+    const isNecessaryChecked = event.target.checked
+    setFilters({ ...filters, isNecessaryChecked })
+  }
+
+  const handleSelectClass = (event) => {
+    const classSelected = event.target.value
     setFilters({ ...filters, classSelected })
   }
 
-  const saveAspectsInProperty = (newAspectsInProperty) => {
+  const saveAspectInProperty = (newAspectsInProperty) => {
     localStorage.setItem(LOCAL_STORAGE_ASPECTS_IN_PROPERTY, JSON.stringify(newAspectsInProperty))
     setAspectsInProperty(newAspectsInProperty)
   }
 
-  const addAspectToPropertyList = (name) => {
-    const newAspectsInProperty = [...aspectsInProperty, name]
-    saveAspectsInProperty(newAspectsInProperty)
+  const handleAddAspectToPropertyList = (aspectName) => {
+    const newAspectsInProperty = [...aspectsInProperty, aspectName]
+    saveAspectInProperty(newAspectsInProperty)
   }
 
-  const removeAspectFromPropertyList = (name) => {
-    const newAspectsInProperty = aspectsInProperty.filter(aspect => aspect !== name)
-    saveAspectsInProperty(newAspectsInProperty)
+  const handleRemoveAspectFromPropertyList = (aspectName) => {
+    const newAspectsInProperty = aspectsInProperty.filter(aspect => aspect !== aspectName)
+    saveAspectInProperty(newAspectsInProperty)
+  }
+
+  const handleCheckAspectNecessary = (event, aspectName) => {
+    const isChecked = event.target.checked
+    let newAspectsNecessary
+
+    if (isChecked) {
+      newAspectsNecessary = [...aspectsNecessary, aspectName]
+    } else {
+      newAspectsNecessary = aspectsNecessary.filter(aspect => aspect !== aspectName)
+    }
+
+    localStorage.setItem(LOCAL_STORAGE_ASPECTS_NECESSARY, JSON.stringify(newAspectsNecessary))
+    setAspectsNecessary(newAspectsNecessary)
   }
 
   useEffect(() => {
-    const { classSelected, searchInput } = filters
+    const { classSelected, searchInput, isNecessaryChecked } = filters
     let aspectsFiltered = aspectsRef.current
 
     if (classSelected !== '') {
@@ -77,9 +98,13 @@ function App() {
         || doesTextsIncludes(getLocalized(nameLocalized, LOCALIZED_EN), searchInput)
       ))
     }
+    if (isNecessaryChecked) {
+      aspectsFiltered = aspectsFiltered.filter(({ name }) => aspectsNecessary.some(aspectNecessary => aspectNecessary === name))
+    }
 
     setAspects(aspectsFiltered)
-  }, [filters])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, aspectsNecessary])
 
   useEffect(() => {
     fetch(ASPECTS_URL).then(response => response.json()).then(data => {
@@ -91,6 +116,7 @@ function App() {
       setAspects(aspectsArray)
     })
     setAspectsInProperty(JSON.parse(localStorage.getItem(LOCAL_STORAGE_ASPECTS_IN_PROPERTY)) ?? [])
+    setAspectsNecessary(JSON.parse(localStorage.getItem(LOCAL_STORAGE_ASPECTS_NECESSARY)) ?? [])
   }, [])
 
   return (
@@ -99,22 +125,28 @@ function App() {
         <select id="cars" onChange={handleSelectClass}>
           {CLASSES_LIST.map(({ id, value }) => <option key={id} value={id}>{value}</option>)}
         </select>
-        <input placeholder='Search...' style={{ width: '100%', padding: 5 }} onChange={handleSearchAspects} />
+        <input placeholder='Search...' style={{ flex: 1, padding: 5 }} onChange={handleSearchAspects} />
+        <label onChange={handleFilterNecessary}><input type="checkbox" />💛</label>
       </div>
-      {aspects.map(({ category/*, class: aspectClass*/, desc_localized: descLocalized, in_codex: inCodex, name, name_localized: nameLocalized }) => (
-        <div key={name} style={{ margin: 10 }}>
-          <Aspect
-            id={name}
-            category={category}
-            desc={getLocalized(descLocalized, LOCALIZED_ES)}
-            inCodex={inCodex}
-            name={getLocalized(nameLocalized, LOCALIZED_ES)}
-            isInPorperty={aspectsInProperty.some(aspect => aspect === name)}
-            onAddClick={addAspectToPropertyList}
-            onRemoveClick={removeAspectFromPropertyList}
-          />
-        </div>
-      ))}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+        {aspects.map(({ category/*, class: aspectClass*/, desc_localized: descLocalized, in_codex: inCodex, name, name_localized: nameLocalized }) => (
+          <div key={name} style={{ margin: 10 }}>
+            <Aspect
+              id={name}
+              category={category}
+              desc={getLocalized(descLocalized, LOCALIZED_ES)}
+              // aspectClass={aspectClass}
+              inCodex={inCodex}
+              name={getLocalized(nameLocalized, LOCALIZED_ES)}
+              isInPorperty={aspectsInProperty.some(aspect => aspect === name)}
+              isNecessary={aspectsNecessary.some(aspect => aspect === name)}
+              onAddClick={handleAddAspectToPropertyList}
+              onRemoveClick={handleRemoveAspectFromPropertyList}
+              onNecessaryClick={handleCheckAspectNecessary}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
