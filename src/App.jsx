@@ -120,17 +120,17 @@ function App() {
   }, [])
 
   return (
-    <div style={{ margin: 50 }}>
-      <div style={{ display: 'flex', marginBottom: 20, gap: 10 }}>
+    <div style={{ margin: '32px 24px' }}>
+      <div style={{ display: 'flex', marginBottom: 32, gap: 8 }}>
         <select id="cars" onChange={handleSelectClass}>
           {CLASSES_LIST.map(({ id, value }) => <option key={id} value={id}>{value}</option>)}
         </select>
         <input placeholder='Search...' style={{ flex: 1, padding: 5 }} onChange={handleSearchAspects} />
-        <label onChange={handleFilterNecessary}><input type="checkbox" />💛</label>
+        <label onChange={handleFilterNecessary} ><input type="checkbox" />💛</label>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+      <div style={{ display: 'grid', gridGap: 8, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
         {aspects.map(({ category/*, class: aspectClass*/, desc_localized: descLocalized, in_codex: inCodex, name, name_localized: nameLocalized }) => (
-          <div key={name} style={{ margin: 10 }}>
+          <div key={name}>
             <Aspect
               id={name}
               category={category}
